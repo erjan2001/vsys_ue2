@@ -1,12 +1,22 @@
 package dslab.transfer;
 
-import java.io.InputStream;
-import java.io.PrintStream;
+import java.io.*;
+import java.net.ServerSocket;
+import java.util.HashMap;
 
+import at.ac.tuwien.dsg.orvell.Shell;
+import at.ac.tuwien.dsg.orvell.StopShellException;
+import at.ac.tuwien.dsg.orvell.annotation.Command;
 import dslab.ComponentFactory;
 import dslab.util.Config;
+import dslab.util.Globals;
 
-public class TransferServer implements ITransferServer, Runnable {
+public class TransferServer implements ITransferServer, Runnable, Globals {
+
+    private final ServerSocket transferServer;
+    private final Config config;
+    private final Config domains;
+    private final Shell shell;
 
     /**
      * Creates a new server instance.
@@ -17,22 +27,40 @@ public class TransferServer implements ITransferServer, Runnable {
      * @param out the output stream to write console output to
      */
     public TransferServer(String componentId, Config config, InputStream in, PrintStream out) {
-        // TODO
+        this.config = config;
+        this.domains  = new Config("domains");
+        this.shell = new Shell(in,out);
+        this.shell.register(this);
+        this.shell.setPrompt(componentId + " < ");
+
+        try {
+            transferServer = new ServerSocket(config.getInt("tcp.port"));
+        } catch (IOException e) {
+            throw new UncheckedIOException("Error starting" + componentId, e);
+        }
     }
 
     @Override
     public void run() {
-        // TODO
+        new TransferServerListenerThread(this.transferServer, config, domains).start();
+        this.shell.run();
     }
 
     @Override
-    public void shutdown() {
-        // TODO
+    @Command
+    public void shutdown() throws StopShellException {
+        if(this.transferServer != null){
+            try {
+                this.transferServer.close();
+            } catch (IOException e) {
+                System.err.println("Closing TransferServer failed!" + e);
+            }
+        }
+        throw new StopShellException();
     }
 
     public static void main(String[] args) throws Exception {
         ITransferServer server = ComponentFactory.createTransferServer(args[0], System.in, System.out);
         server.run();
     }
-
 }
