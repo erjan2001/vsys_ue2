@@ -14,9 +14,9 @@ import dslab.util.Config;
 
 public class Nameserver implements INameserver {
 
-    private Config config;
-    private Shell shell;
-    private boolean isRoot;
+    private final Config config;
+    private final Shell shell;
+    private final boolean isRoot;
     private INameserverRemote nameserverRemote;
     private Registry registry;
 
