@@ -30,10 +30,14 @@ public class DMAPConnection extends Thread {
             String line = "";
             Map<Integer, Email> inbox = null;
             boolean flogin = false;
+            boolean secureConnection = false;
 
             while (!Thread.currentThread().isInterrupted() && (line = bufferedReader.readLine()) != null) {
                 String[] parts = line.split(" ");
 
+                if(parts[0].equals("startsecure")){
+                    //TODO secure connection
+                }
                 if (!flogin) {
                     switch (parts[0]) {
                         case "login":
