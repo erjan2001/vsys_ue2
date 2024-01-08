@@ -192,6 +192,12 @@ public class DMTPSend extends Thread {
                 return null;
             }
 
+            printWriter.println("hash " + email.getHash());
+            res = bufferedReader.readLine();
+            if (!res.equals("ok")) {
+                return null;
+            }
+
             printWriter.println("send");
             res = bufferedReader.readLine();
             if (!res.equals("ok")) {

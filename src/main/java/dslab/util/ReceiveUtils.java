@@ -16,6 +16,7 @@ public final class ReceiveUtils {
             this.printWriter.println("error no recipients");
             return false;
         } else if (!ffrom) {
+            System.out.println("!from:" + email);
             this.printWriter.println("error no sender");
             return false;
         } else if (!fsubject) {
@@ -25,6 +26,9 @@ public final class ReceiveUtils {
             if (length > 0) {
                 emailBlockingQueue.put(email);
                 this.printWriter.println("ok");
+            } else {
+                this.printWriter.println("error no to");
+                return false;
             }
         }
         return true;

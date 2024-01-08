@@ -31,7 +31,7 @@ public class DMTPReceiverTransfer extends Thread{
             this.receiveUtils = new ReceiveUtils(printWriter);
             Email email = new Email();
 
-            printWriter.println("ok DMTP");
+            printWriter.println("ok DMTP2.0");
 
             boolean fbegin = false;
             boolean fto = false;
@@ -68,14 +68,18 @@ public class DMTPReceiverTransfer extends Thread{
                             email.setData(line.substring(indexOfSpace + 1));
                             printWriter.println("ok");
                             break;
+                        case "hash":
+                            email.setHash(parts[1]);
+                            printWriter.println("ok");
+                            break;
                         case "send":
-                            boolean err = receiveUtils.handleSendCommand(fto,
+                            boolean noErr = receiveUtils.handleSendCommand(fto,
                                     ffrom,
                                     fsubject,
                                     email,
                                     email.getTo().length,
                                     this.emailBlockingQueue);
-                            if(!err){
+                            if(noErr){
                                 email = new Email();
                                 ffrom = false;
                                 fto = false;

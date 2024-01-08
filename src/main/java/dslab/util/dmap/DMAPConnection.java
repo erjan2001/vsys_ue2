@@ -104,6 +104,7 @@ public class DMAPConnection extends Thread {
                             printWithPossibleEncryption("error logout before", printWriter, aesHandler, secureConnection);
                             break;
                         case "list":
+                            System.out.println("length inbox:" + inbox.size());
                             for (Map.Entry<Integer, Email> e :
                                     inbox.entrySet()) {
                                 printWithPossibleEncryption(e.getKey() + " " + e.getValue().getFrom() + " " + e.getValue().getSubject(), printWriter, aesHandler, secureConnection);

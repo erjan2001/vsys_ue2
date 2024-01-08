@@ -50,7 +50,7 @@ public class MessageClient implements IMessageClient, Runnable {
         this.shell = new Shell(in, out);
 
         this.shell.register(this);
-        this.shell.setPrompt(componentId + " < ");
+        this.shell.setPrompt(componentId + " > ");
         this.dmapExecuter = Executors.newSingleThreadExecutor();
         this.loadKey();
         this.startDMAPClient();
@@ -78,20 +78,19 @@ public class MessageClient implements IMessageClient, Runnable {
     @Command
     @Override
     public void inbox() {
-        System.out.println("here");
         this.dmapClient.inbox();
     }
 
     @Command
     @Override
     public void delete(String id) {
-
+        this.dmapClient.delete(this.shell, id);
     }
 
     @Command
     @Override
     public void verify(String id) {
-
+        this.dmapClient.verify(this.shell, id, this.secretKey);
     }
 
     @Command
@@ -102,6 +101,12 @@ public class MessageClient implements IMessageClient, Runnable {
              PrintWriter writer = new PrintWriter(socket.getOutputStream(),true);
              BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream()))) {
 
+            resp = reader.readLine();
+            if (!resp.startsWith("ok DMTP")) {
+                this.shell.out().println(resp);
+                return;
+            }
+
             writer.println("begin");
             resp = reader.readLine();
             if(!resp.equals("ok")) {
@@ -111,7 +116,7 @@ public class MessageClient implements IMessageClient, Runnable {
 
             writer.println("to " + to);
             resp = reader.readLine();
-            if(!resp.equals("ok")) {
+            if(!resp.startsWith("ok")) {
                 this.shell.out().println(resp);
                 return;
             }
@@ -146,7 +151,7 @@ public class MessageClient implements IMessageClient, Runnable {
 
             writer.println("send");
             resp = reader.readLine();
-            if(!resp.equals("ok")) {
+            if(!resp.startsWith("ok")) {
                 this.shell.out().println(resp);
                 return;
             }
