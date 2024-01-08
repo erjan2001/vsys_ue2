@@ -60,7 +60,7 @@ public class MailboxServer implements IMailboxServer, Runnable {
         try {
             Registry registry = LocateRegistry.getRegistry(config.getString("registry.host"), config.getInt("registry.port"));
             INameserverRemote rootNameserver = (INameserverRemote) registry.lookup(config.getString("root_id"));
-            rootNameserver.registerMailboxServer(config.getString("domain"), InetAddress.getLocalHost().getHostAddress() + config.getInt("dmtp.tcp.port"));
+            rootNameserver.registerMailboxServer(config.getString("domain"), InetAddress.getLocalHost().getHostAddress() + ":" + config.getInt("dmtp.tcp.port"));
         } catch (RemoteException e) {
             System.err.println("Remote operation failed: " + e.getMessage());
         } catch (NotBoundException e) {
