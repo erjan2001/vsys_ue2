@@ -1,20 +1,18 @@
 package dslab.client;
 
-import java.io.InputStream;
-import java.io.PrintStream;
+import java.io.*;
+import java.util.concurrent.ExecutorService;
 
 import at.ac.tuwien.dsg.orvell.Shell;
+import at.ac.tuwien.dsg.orvell.StopShellException;
+import at.ac.tuwien.dsg.orvell.annotation.Command;
 import dslab.ComponentFactory;
 import dslab.util.Config;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import dslab.util.Keys;
 
 import javax.crypto.SecretKey;
 
 public class MessageClient implements IMessageClient, Runnable {
-
-
-    private static final Log LOG = LogFactory.getLog(MessageClient.class);
 
     private final Shell shell;
     private final int transferPort;
@@ -25,6 +23,11 @@ public class MessageClient implements IMessageClient, Runnable {
 
     private final Config config;
     private SecretKey secretKey;
+
+    private ExecutorService dmapExecuter;
+
+    private DMAPClient dmapClient;
+
 
     /**
      * Creates a new client instance.
@@ -38,42 +41,62 @@ public class MessageClient implements IMessageClient, Runnable {
         this.config = config;
         this.componentId = componentId;
         this.transferPort = config.getInt("transfer.port");
-        this.transferHost = config.getString("tranfer.host");
+        this.transferHost = config.getString("transfer.host");
         this.shell = new Shell(in, out);
 
-        shell.register(this);
-        shell.setPrompt(componentId + " < ");
+        this.shell.register(this);
+        this.shell.setPrompt(componentId + " < ");
+        this.loadKey();
+        this.startDMAPClient();
+    }
 
+    private void startDMAPClient() {
+        this.dmapClient = new DMAPClient(this, this.config, this.shell);
+        this.dmapExecuter.submit(dmapClient);
+    }
+
+    private void loadKey() {
+        try{
+            this.secretKey = Keys.readSecretKey(new File("./keys/hmac.key"));
+        } catch (IOException e) {
+            this.secretKey = null;
+            throw new UncheckedIOException("Error while loading secret key", e);
+        }
     }
 
     @Override
     public void run() {
-
+        this.shell.run();
     }
 
+    @Command
     @Override
     public void inbox() {
 
     }
 
+    @Command
     @Override
     public void delete(String id) {
 
     }
 
+    @Command
     @Override
     public void verify(String id) {
 
     }
 
+    @Command
     @Override
     public void msg(String to, String subject, String data) {
 
     }
 
+    @Command
     @Override
     public void shutdown() {
-
+        throw new StopShellException();
     }
 
     public static void main(String[] args) throws Exception {
