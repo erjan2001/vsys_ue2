@@ -128,8 +128,31 @@ public class DMAPClient implements Runnable{
             throw new ShowException(resp);
         }
 
-
-        return "";
+        Email e = new Email();
+        for (String email:
+             resp.split("\n\r")) {
+            String[] values = email.split(" ");
+            if (values.length == 2) {
+                switch (values[0]) {
+                    case "from":
+                        e.setFrom(values[1]);
+                        break;
+                    case "to":
+                        e.setTo(values[1]);
+                        break;
+                    case "data":
+                        e.setData(values[1]);
+                        break;
+                    case "subject":
+                        e.setSubject(values[1]);
+                        break;
+                    case "hash":
+                        e.setHash(values[1]);
+                        break;
+                }
+            }
+        }
+        return e.toString();
     }
 
 }
