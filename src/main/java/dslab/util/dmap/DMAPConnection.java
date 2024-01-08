@@ -12,11 +12,13 @@ public class DMAPConnection extends Thread {
     private Socket clientSocket;
     private Map<String, Map<Integer, Email>> userInbox;
     private Map<String, String> userPassword;
+    private String componentId;
 
-    public DMAPConnection(Socket clientSocket, Map<String, Map<Integer, Email>> userInbox, Map<String, String> userPassword) {
+    public DMAPConnection(Socket clientSocket, Map<String, Map<Integer, Email>> userInbox, Map<String, String> userPassword, String componentId) {
         this.clientSocket = clientSocket;
         this.userInbox = userInbox;
         this.userPassword = userPassword;
+        this.componentId = componentId;
     }
 
     @Override
@@ -25,7 +27,7 @@ public class DMAPConnection extends Thread {
             BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(this.clientSocket.getInputStream()));
             PrintWriter printWriter = new PrintWriter(this.clientSocket.getOutputStream(),true);
 
-            printWriter.println("ok DMAP");
+            printWriter.println("ok DMAP2.0");
 
             String line = "";
             Map<Integer, Email> inbox = null;
@@ -36,8 +38,13 @@ public class DMAPConnection extends Thread {
                 String[] parts = line.split(" ");
 
                 if(parts[0].equals("startsecure")){
-                    //TODO secure connection
+                        DMAPHandshakeHandler dmapHandshakeHandler = new DMAPHandshakeHandler(this.clientSocket, componentId);
+                        dmapHandshakeHandler.handshakeServerSide(bufferedReader, printWriter);
+
+                        secureConnection = true;
+                        continue;
                 }
+
                 if (!flogin) {
                     switch (parts[0]) {
                         case "login":
