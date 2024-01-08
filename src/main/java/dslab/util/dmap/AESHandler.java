@@ -24,15 +24,13 @@ public class AESHandler
     {
         this.secretKey = secretKey;
         this.iv = iv;
-        Cipher decryptCipher;
-        Cipher encryptCipher;
         try
         {
-            decryptCipher = Cipher.getInstance("AES/CTR/NoPadding");
-            encryptCipher = Cipher.getInstance("AES/CTR/NoPadding");
+            this.decryptCipher = Cipher.getInstance("AES/CTR/NoPadding");
+            this.encryptCipher = Cipher.getInstance("AES/CTR/NoPadding");
 
-            decryptCipher.init(Cipher.DECRYPT_MODE,new SecretKeySpec(secretKey, "AES"),new IvParameterSpec(iv));
-            encryptCipher.init(Cipher.ENCRYPT_MODE,new SecretKeySpec(secretKey, "AES"),new IvParameterSpec(iv));
+            this.decryptCipher.init(Cipher.DECRYPT_MODE,new SecretKeySpec(secretKey, "AES"),new IvParameterSpec(iv));
+            this.encryptCipher.init(Cipher.ENCRYPT_MODE,new SecretKeySpec(secretKey, "AES"),new IvParameterSpec(iv));
 
 
         } catch (NoSuchAlgorithmException | NoSuchPaddingException | InvalidKeyException |

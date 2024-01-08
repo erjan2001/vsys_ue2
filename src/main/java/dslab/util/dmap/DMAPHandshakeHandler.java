@@ -116,7 +116,7 @@ public class DMAPHandshakeHandler
         String decryptedMessage;
         try
         {
-            PrivateKey privateKey = Keys.readPrivateKey(new File("./keys/servers/" + componentId + ".der"));
+            PrivateKey privateKey = Keys.readPrivateKey(new File("./keys/server/" + componentId + ".der"));
             Cipher decryptCipher  = Cipher.getInstance("RSA/ECB/PKCS1Padding");
             decryptCipher .init(Cipher.DECRYPT_MODE, privateKey);
             byte[] decryptedMessageBytes = decryptCipher.doFinal(encryptedMessage);
