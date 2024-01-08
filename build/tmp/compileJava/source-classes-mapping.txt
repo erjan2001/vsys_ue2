@@ -14,8 +14,8 @@ dslab/util/dmtp/DMTPReceiverMailbox.java
  dslab.util.dmtp.DMTPReceiverMailbox
 dslab/monitoring/IMonitoringServer.java
  dslab.monitoring.IMonitoringServer
-dslab/transfer/TransferServerListenerThread.java
- dslab.transfer.TransferServerListenerThread
+dslab/util/dmap/DMAPConnection.java
+ dslab.util.dmap.DMAPConnection
 dslab/transfer/ITransferServer.java
  dslab.transfer.ITransferServer
 dslab/client/MessageClient.java
@@ -34,8 +34,8 @@ dslab/mailbox/MailboxServer.java
  dslab.mailbox.MailboxServer
 dslab/util/dmtp/DMTPSend.java
  dslab.util.dmtp.DMTPSend
-dslab/nameserver/AlreadyRegisteredException.java
- dslab.nameserver.AlreadyRegisteredException
+dslab/util/dmap/DMAPHandshakeHandler.java
+ dslab.util.dmap.DMAPHandshakeHandler
 dslab/util/Globals.java
  dslab.util.Globals
 dslab/ComponentFactory.java
@@ -56,13 +56,13 @@ dslab/transfer/TransferServer.java
  dslab.transfer.TransferServer
 dslab/util/Config.java
  dslab.util.Config
-dslab/client/DMAPClient.java
- dslab.client.DMAPClient
-dslab/mailbox/MailboxManager.java
- dslab.mailbox.MailboxManager
-dslab/util/dmap/DMAPConnection.java
- dslab.util.dmap.DMAPConnection
 dslab/util/dmap/AESHandler.java
  dslab.util.dmap.AESHandler
-dslab/util/dmap/DMAPHandshakeHandler.java
- dslab.util.dmap.DMAPHandshakeHandler
+dslab/mailbox/MailboxManager.java
+ dslab.mailbox.MailboxManager
+dslab/nameserver/AlreadyRegisteredException.java
+ dslab.nameserver.AlreadyRegisteredException
+dslab/transfer/TransferServerListenerThread.java
+ dslab.transfer.TransferServerListenerThread
+dslab/client/DMAPClient.java
+ dslab.client.DMAPClient
