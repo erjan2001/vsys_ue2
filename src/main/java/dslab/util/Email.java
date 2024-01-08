@@ -12,6 +12,8 @@ public class Email {
     private String subject = "";
     private String data = "";
 
+    private String hash = "";
+
     public Email(){}
 
     public String getFrom() {
@@ -54,6 +56,14 @@ public class Email {
         return this.serverTos;
     }
 
+    public String getHash() {
+        return hash;
+    }
+
+    public void setHash(String hash) {
+        this.hash = hash;
+    }
+
     @Override
     public String toString() {
         StringBuilder email = new StringBuilder();
@@ -67,8 +77,8 @@ public class Email {
         email.append("\n\r");
 
         email.append("subject ").append(this.subject).append("\n\r");
-        email.append("data ").append(this.data);
-
+        email.append("data ").append(this.data).append("\n\r");
+        email.append("hash ").append(this.hash);
         return email.toString();
     }
 }

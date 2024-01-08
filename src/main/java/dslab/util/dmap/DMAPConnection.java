@@ -78,7 +78,7 @@ public class DMAPConnection extends Thread {
                                     inbox.entrySet()) {
                                 printWriter.println(e.getKey() + " " + e.getValue().getFrom() + " " + e.getValue().getSubject());
                             }
-
+                            printWriter.println("ok"); // client now knows when list is finished
                             break;
                         case "show":
                             if (parts.length == 2) {

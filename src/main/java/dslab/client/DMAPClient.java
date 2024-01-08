@@ -3,10 +3,13 @@ package dslab.client;
 import at.ac.tuwien.dsg.orvell.Shell;
 import dslab.exceptions.HandshakeException;
 import dslab.exceptions.LoginFailException;
+import dslab.exceptions.ShowException;
 import dslab.util.Config;
+import dslab.util.Email;
 
 import java.io.*;
 import java.net.Socket;
+import java.util.ArrayList;
 
 public class DMAPClient implements Runnable{
 
@@ -58,6 +61,36 @@ public class DMAPClient implements Runnable{
         try{
             //TODO encrypt
             this.writer.println("list");
+            //TODO decrypt
+            String resp = reader.readLine();
+
+            if(resp.startsWith("error")){
+                writer.println(resp);
+            }
+
+            ArrayList<String> ids = new ArrayList<>();
+            for (String mail:
+                 resp.split("\n")) {
+                if(mail.startsWith("ok")){
+                    break;
+                }
+                // mail = id + " " + from + " " + subject
+                ids.add(mail.split(" ")[0]);
+            }
+
+            if (ids.isEmpty()) {
+                this.shell.out().println("no mails in mailbox");
+            } else {
+                for (String id:
+                     ids) {
+                    this.shell.out().println(this.show(id));
+                }
+            }
+
+        } catch (IOException e) {
+            throw new UncheckedIOException("Error during connection to mailbox", e);
+        } catch (ShowException e) {
+            System.err.println(e.getMessage());
         }
     }
 
@@ -81,6 +114,22 @@ public class DMAPClient implements Runnable{
         if(!this.reader.readLine().equals("ok")) {
             throw new LoginFailException("Login failed for user: " + this.config.getString("mailbox.user"));
         }
+    }
+
+    private String show(String id) throws IOException, ShowException {
+
+        //TODO encrypt
+        this.writer.println("show " + id);
+
+        //TODO decrypt
+        String resp = this.reader.readLine();
+
+        if (resp.startsWith("error")) {
+            throw new ShowException(resp);
+        }
+
+
+        return "";
     }
 
 }
