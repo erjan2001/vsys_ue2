@@ -1,5 +1,6 @@
 package dslab.util.dmap;
 
+import dslab.exceptions.HandshakeException;
 import dslab.util.Email;
 
 import javax.crypto.BadPaddingException;
@@ -49,9 +50,17 @@ public class DMAPConnection extends Thread {
 
 
                         DMAPHandshakeHandler dmapHandshakeHandler = new DMAPHandshakeHandler(componentId);
+                    try
+                    {
                         dmapHandshakeHandler.handshakeServerSide(bufferedReader, printWriter);
+                    } catch (HandshakeException e)
+                    {
+                        System.out.println("error handshake failed");
+                        printWithPossibleEncryption("error handshake failed", printWriter, aesHandler, secureConnection);
+                        continue;
+                    }
 
-                        aesHandler = dmapHandshakeHandler.getAesHandler();
+                    aesHandler = dmapHandshakeHandler.getAesHandler();
                         secureConnection = true;
                         continue;
                 }
