@@ -25,6 +25,7 @@ public class DMAPHandshakeHandler
 
     private Socket clientSocket;
     private String componentId;
+    private AESHandler aesHandler;
 
     public DMAPHandshakeHandler(Socket clientSocket, String componentId)
     {
@@ -54,26 +55,15 @@ public class DMAPHandshakeHandler
         byte[] iv = Base64.getDecoder().decode(parts[3]);
 
         //AES decryption --- should be separate method
-        Cipher decryptCipher;
-        Cipher encryptCipher;
-        try
-        {
-            decryptCipher = Cipher.getInstance("AES/CTR/NoPadding");
-            encryptCipher = Cipher.getInstance("AES/CTR/NoPadding");
-
-            decryptCipher.init(Cipher.DECRYPT_MODE,new SecretKeySpec(secretKey, "AES"),new IvParameterSpec(iv));
-            encryptCipher.init(Cipher.ENCRYPT_MODE,new SecretKeySpec(secretKey, "AES"),new IvParameterSpec(iv));
 
 
-        } catch (NoSuchAlgorithmException | NoSuchPaddingException | InvalidKeyException |
-                 InvalidAlgorithmParameterException e)
-        {
-            throw new RuntimeException(e);
-        }
+        this.aesHandler = new AESHandler(secretKey, iv);
+
+
         // ------
         try
         {
-            printWriter.println(aesEncryption("ok " + parts[1], encryptCipher));
+            printWriter.println(aesHandler.aesEncryption("ok " + parts[1]));
         } catch (IllegalBlockSizeException | BadPaddingException e)
         {
             throw new RuntimeException(e);
@@ -83,7 +73,7 @@ public class DMAPHandshakeHandler
 
         try
         {
-            if(!aesDecryption(encryptedMessage, decryptCipher).equals("ok")){
+            if(!aesHandler.aesDecryption(encryptedMessage).equals("ok")){
                 //TODO ??
                 throw new RuntimeException();
             }
@@ -111,15 +101,33 @@ public class DMAPHandshakeHandler
         return decryptedMessage;
     }
 
-    public String aesEncryption(String decryptedMessage, Cipher encryptCipher) throws IllegalBlockSizeException, BadPaddingException
+    public Socket getClientSocket()
     {
-            return Base64.getEncoder().encodeToString(encryptCipher.doFinal(decryptedMessage.getBytes()));
+        return clientSocket;
     }
 
-    public String aesDecryption(String encryptedMessage, Cipher decryptCipher) throws IllegalBlockSizeException, BadPaddingException
+    public void setClientSocket(Socket clientSocket)
     {
-        byte[] decryptedBytes = decryptCipher.doFinal(Base64.getDecoder().decode(encryptedMessage));
-        return new String(decryptedBytes);
+        this.clientSocket = clientSocket;
     }
 
+    public String getComponentId()
+    {
+        return componentId;
+    }
+
+    public void setComponentId(String componentId)
+    {
+        this.componentId = componentId;
+    }
+
+    public AESHandler getAesHandler()
+    {
+        return aesHandler;
+    }
+
+    public void setAesHandler(AESHandler aesHandler)
+    {
+        this.aesHandler = aesHandler;
+    }
 }
