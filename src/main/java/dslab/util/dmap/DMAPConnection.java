@@ -106,15 +106,16 @@ public class DMAPConnection extends Thread {
                         case "list":
                             for (Map.Entry<Integer, Email> e :
                                     inbox.entrySet()) {
-                                printWriter.println(e.getKey() + " " + e.getValue().getFrom() + " " + e.getValue().getSubject());
+                                printWithPossibleEncryption(e.getKey() + " " + e.getValue().getFrom() + " " + e.getValue().getSubject(), printWriter, aesHandler, secureConnection);
+                                //printWriter.println(e.getKey() + " " + e.getValue().getFrom() + " " + e.getValue().getSubject());
                             }
-                            printWriter.println("ok"); // client now knows when list is finished
+                            printWithPossibleEncryption("ok", printWriter, aesHandler, secureConnection); // client now knows when list is finished
                             break;
                         case "show":
                             if (parts.length == 2) {
                                 int key = Integer.parseInt(parts[1]);
                                 if (inbox.containsKey(key)) {
-                                    printWriter.println(inbox.get(key).toString());
+                                    printWithPossibleEncryption(inbox.get(key).toString(), printWriter, aesHandler, secureConnection);
                                 } else {
                                     printWithPossibleEncryption("error unknown message id", printWriter, aesHandler, secureConnection);
                                 }

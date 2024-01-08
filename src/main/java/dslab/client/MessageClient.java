@@ -1,6 +1,7 @@
 package dslab.client;
 
 import java.io.*;
+import java.net.Socket;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -75,6 +76,7 @@ public class MessageClient implements IMessageClient, Runnable {
     @Command
     @Override
     public void inbox() {
+        System.out.println("here");
         this.dmapClient.inbox();
     }
 
@@ -93,7 +95,9 @@ public class MessageClient implements IMessageClient, Runnable {
     @Command
     @Override
     public void msg(String to, String subject, String data) {
-
+        try {
+            Socket socket = new Socket(this.transferHost, this.transferPort);
+        }
     }
 
     @Command

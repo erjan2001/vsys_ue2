@@ -62,29 +62,24 @@ public class DMAPClient implements Runnable{
     public void inbox(){
         try{
             this.writer.println(this.dmapHandshakeHandler.getAesHandler().aesEncryption("list"));
-
-            String resp = this.dmapHandshakeHandler.getAesHandler().aesDecryption(reader.readLine());
-
-            if(resp.startsWith("error")){
-                writer.println(resp);
-            }
-
             ArrayList<String> ids = new ArrayList<>();
-            for (String mail:
-                 resp.split("\n")) {
-                if(mail.startsWith("ok")){
+            String resp;
+
+            while(!(resp = this.dmapHandshakeHandler.getAesHandler().aesDecryption(reader.readLine())).equals("ok")) {
+                if(resp.startsWith("error")){
+                    writer.println(resp);
                     break;
                 }
-                // mail = id + " " + from + " " + subject
-                ids.add(mail.split(" ")[0]);
+                // resp = id + " " + from + " " + subject
+                System.out.println(resp);
+                ids.add(resp.split(" ")[0]);
             }
-
+            System.out.println(ids.size() + "--------------------------------------");
             if (ids.isEmpty()) {
                 this.shell.out().println("no mails in mailbox");
             } else {
                 for (String id:
                      ids) {
-                    
                     this.shell.out().println(this.show(id));
                 }
             }
@@ -123,7 +118,7 @@ public class DMAPClient implements Runnable{
         this.writer.println(this.dmapHandshakeHandler.getAesHandler().aesEncryption("show " + id));
 
         String resp = this.dmapHandshakeHandler.getAesHandler().aesDecryption(this.reader.readLine());
-
+        System.out.println(resp);
         if (resp.startsWith("error")) {
             throw new ShowException(resp);
         }
