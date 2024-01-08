@@ -60,7 +60,7 @@ public class MailboxServer implements IMailboxServer, Runnable {
         }
 
         new MailboxDMTPServerThread(this.dmtpServer, this.users.listKeys(), this.config,userInbox).start();
-        new MailboxDMAPServerThread(this.dmapServer, userInbox, userPassword).start();
+        new MailboxDMAPServerThread(this.dmapServer, userInbox, userPassword, this.componentId).start();
         this.shell.run();
     }
 

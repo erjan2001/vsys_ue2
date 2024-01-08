@@ -2,6 +2,8 @@ package dslab.util.dmap;
 
 import dslab.util.Email;
 
+import javax.crypto.BadPaddingException;
+import javax.crypto.IllegalBlockSizeException;
 import java.io.*;
 import java.net.Socket;
 import java.net.SocketException;
@@ -12,11 +14,13 @@ public class DMAPConnection extends Thread {
     private Socket clientSocket;
     private Map<String, Map<Integer, Email>> userInbox;
     private Map<String, String> userPassword;
+    private String componentId;
 
-    public DMAPConnection(Socket clientSocket, Map<String, Map<Integer, Email>> userInbox, Map<String, String> userPassword) {
+    public DMAPConnection(Socket clientSocket, Map<String, Map<Integer, Email>> userInbox, Map<String, String> userPassword, String componentId) {
         this.clientSocket = clientSocket;
         this.userInbox = userInbox;
         this.userPassword = userPassword;
+        this.componentId = componentId;
     }
 
     @Override
@@ -25,57 +29,71 @@ public class DMAPConnection extends Thread {
             BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(this.clientSocket.getInputStream()));
             PrintWriter printWriter = new PrintWriter(this.clientSocket.getOutputStream(),true);
 
-            printWriter.println("ok DMAP");
+            printWriter.println("ok DMAP2.0");
 
             String line = "";
             Map<Integer, Email> inbox = null;
             boolean flogin = false;
             boolean secureConnection = false;
+            AESHandler aesHandler = null;
 
             while (!Thread.currentThread().isInterrupted() && (line = bufferedReader.readLine()) != null) {
+
+                if(secureConnection){
+                    line = aesHandler.aesDecryption(line);
+                }
+
                 String[] parts = line.split(" ");
 
                 if(parts[0].equals("startsecure")){
-                    //TODO secure connection
+
+
+                        DMAPHandshakeHandler dmapHandshakeHandler = new DMAPHandshakeHandler(componentId);
+                        dmapHandshakeHandler.handshakeServerSide(bufferedReader, printWriter);
+
+                        aesHandler = dmapHandshakeHandler.getAesHandler();
+                        secureConnection = true;
+                        continue;
                 }
+
                 if (!flogin) {
                     switch (parts[0]) {
                         case "login":
                             if (parts.length == 3) {
                                 if (parts[2].equals(userPassword.get(parts[1]))) {
                                     inbox = userInbox.get(parts[1]);
-                                    printWriter.println("ok");
+                                    printWithPossibleEncryption("ok", printWriter, aesHandler, secureConnection);
                                     flogin = true;
                                 } else {
                                     if (userPassword.containsKey(parts[2])) {
-                                        printWriter.println("error wrong password");
+                                        printWithPossibleEncryption("error wrong password", printWriter, aesHandler, secureConnection);
                                     } else {
-                                        printWriter.println("error unknown user");
+                                        printWithPossibleEncryption("error unknown user", printWriter, aesHandler, secureConnection);
                                     }
                                 }
                             } else {
-                                printWriter.println("error no username or password");
+                                printWithPossibleEncryption("error no username or password", printWriter, aesHandler, secureConnection);
                             }
                             break;
                         case "logout":
                         case "list":
                         case "delete":
                         case "show":
-                            printWriter.println("error user not logged-in");
+                            printWithPossibleEncryption("error user not logged-in", printWriter, aesHandler, secureConnection);
                             break;
                         case "quit":
-                            printWriter.println("ok bye");
+                            printWithPossibleEncryption("ok bye", printWriter, aesHandler, secureConnection);
                             this.shutdown();
                             return;
                         default:
-                            printWriter.println("error protocol error");
+                            printWithPossibleEncryption("error protocol error", printWriter, aesHandler, secureConnection);
                             this.shutdown();
                             return;
                     }
                 } else {
                     switch (parts[0]) {
                         case "login":
-                            printWriter.println("error logout before");
+                            printWithPossibleEncryption("error logout before", printWriter, aesHandler, secureConnection);
                             break;
                         case "list":
                             for (Map.Entry<Integer, Email> e :
@@ -90,10 +108,10 @@ public class DMAPConnection extends Thread {
                                 if (inbox.containsKey(key)) {
                                     printWriter.println(inbox.get(key).toString());
                                 } else {
-                                    printWriter.println("error unknown message id");
+                                    printWithPossibleEncryption("error unknown message id", printWriter, aesHandler, secureConnection);
                                 }
                             } else {
-                                printWriter.println("error missing message id");
+                                printWithPossibleEncryption("error missing message id", printWriter, aesHandler, secureConnection);
                             }
                             break;
                         case "delete":
@@ -101,24 +119,24 @@ public class DMAPConnection extends Thread {
                                 int key = Integer.parseInt(parts[1]);
                                 if (inbox.containsKey(key)) {
                                     inbox.remove(key);
-                                    printWriter.println("ok");
+                                    printWithPossibleEncryption("ok", printWriter, aesHandler, secureConnection);
                                 } else {
-                                    printWriter.println("error unknown message id");
+                                    printWithPossibleEncryption("error unknown message id", printWriter, aesHandler, secureConnection);
                                 }
                             } else {
-                                printWriter.println("error missing message id");
+                                printWithPossibleEncryption("error missing message id", printWriter, aesHandler, secureConnection);
                             }
                             break;
                         case "logout":
                             flogin = false;
-                            printWriter.println("ok");
+                            printWithPossibleEncryption("ok", printWriter, aesHandler, secureConnection);
                             break;
                         case "quit":
-                            printWriter.println("ok bye");
+                            printWithPossibleEncryption("ok bye", printWriter, aesHandler, secureConnection);
                             this.shutdown();
                             return;
                         default:
-                            printWriter.println("error protocol error");
+                            printWithPossibleEncryption("error protocol error", printWriter, aesHandler, secureConnection);
                             this.shutdown();
                             return;
                     }
@@ -128,9 +146,25 @@ public class DMAPConnection extends Thread {
             //
         } catch (IOException e) {
             throw new UncheckedIOException(e);
+        } catch (IllegalBlockSizeException e)
+        {
+            throw new RuntimeException(e);
+        } catch (BadPaddingException e)
+        {
+            throw new RuntimeException(e);
         } finally {
             this.shutdown();
         }
+    }
+
+    private void printWithPossibleEncryption(String response, PrintWriter printWriter, AESHandler aesHandler, boolean secureConnection) throws IllegalBlockSizeException, BadPaddingException
+    {
+        if(secureConnection){
+            printWriter.println(aesHandler.aesEncryption(response));
+        }else{
+            printWriter.println(response);
+        }
+
     }
 
     private void shutdown(){
