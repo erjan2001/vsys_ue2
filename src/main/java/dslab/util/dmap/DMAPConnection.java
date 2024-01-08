@@ -48,7 +48,7 @@ public class DMAPConnection extends Thread {
                 if(parts[0].equals("startsecure")){
 
 
-                        DMAPHandshakeHandler dmapHandshakeHandler = new DMAPHandshakeHandler(this.clientSocket, componentId);
+                        DMAPHandshakeHandler dmapHandshakeHandler = new DMAPHandshakeHandler(componentId);
                         dmapHandshakeHandler.handshakeServerSide(bufferedReader, printWriter);
 
                         aesHandler = dmapHandshakeHandler.getAesHandler();
