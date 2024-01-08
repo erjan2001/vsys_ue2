@@ -1,35 +1,41 @@
 package dslab.transfer;
 
-import java.io.*;
-import java.net.ServerSocket;
-import java.util.HashMap;
-
 import at.ac.tuwien.dsg.orvell.Shell;
 import at.ac.tuwien.dsg.orvell.StopShellException;
 import at.ac.tuwien.dsg.orvell.annotation.Command;
 import dslab.ComponentFactory;
+import dslab.nameserver.INameserverRemote;
 import dslab.util.Config;
 import dslab.util.Globals;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.PrintStream;
+import java.io.UncheckedIOException;
+import java.net.ServerSocket;
+import java.rmi.NotBoundException;
+import java.rmi.RemoteException;
+import java.rmi.registry.LocateRegistry;
+import java.rmi.registry.Registry;
 
 public class TransferServer implements ITransferServer, Runnable, Globals {
 
     private final ServerSocket transferServer;
     private final Config config;
-    private final Config domains;
     private final Shell shell;
+    private INameserverRemote rootNameserver;
 
     /**
      * Creates a new server instance.
      *
      * @param componentId the id of the component that corresponds to the Config resource
-     * @param config the component config
-     * @param in the input stream to read console input from
-     * @param out the output stream to write console output to
+     * @param config      the component config
+     * @param in          the input stream to read console input from
+     * @param out         the output stream to write console output to
      */
     public TransferServer(String componentId, Config config, InputStream in, PrintStream out) {
         this.config = config;
-        this.domains  = new Config("domains");
-        this.shell = new Shell(in,out);
+        this.shell = new Shell(in, out);
         this.shell.register(this);
         this.shell.setPrompt(componentId + " < ");
 
@@ -38,18 +44,27 @@ public class TransferServer implements ITransferServer, Runnable, Globals {
         } catch (IOException e) {
             throw new UncheckedIOException("Error starting" + componentId, e);
         }
+
+        try {
+            Registry registry = LocateRegistry.getRegistry(config.getString("registry.host"), config.getInt("registry.port"));
+            rootNameserver = (INameserverRemote) registry.lookup(config.getString("root_id"));
+        } catch (NotBoundException | RemoteException e) {
+            System.err.println("Root Nameserver could not be reached: " + e.getMessage());
+            System.err.println("Shutting down...");
+            shutdown();
+        }
     }
 
     @Override
     public void run() {
-        new TransferServerListenerThread(this.transferServer, config, domains).start();
+        new TransferServerListenerThread(this.transferServer, config, rootNameserver).start();
         this.shell.run();
     }
 
     @Override
     @Command
     public void shutdown() throws StopShellException {
-        if(this.transferServer != null){
+        if (this.transferServer != null) {
             try {
                 this.transferServer.close();
             } catch (IOException e) {
