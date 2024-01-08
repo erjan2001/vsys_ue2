@@ -6,6 +6,7 @@ import dslab.exceptions.LoginFailException;
 import dslab.exceptions.ShowException;
 import dslab.util.Config;
 import dslab.util.Email;
+import dslab.util.dmap.DMAPHandshakeHandler;
 
 import java.io.*;
 import java.net.Socket;

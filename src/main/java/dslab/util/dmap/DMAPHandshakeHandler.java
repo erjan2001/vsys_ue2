@@ -1,5 +1,6 @@
 package dslab.util.dmap;
 
+import dslab.exceptions.HandshakeException;
 import dslab.util.Keys;
 
 import javax.crypto.BadPaddingException;
@@ -33,8 +34,7 @@ public class DMAPHandshakeHandler
         this.componentId = componentId;
     }
 
-    public void handshakeServerSide(BufferedReader bufferedReader, PrintWriter printWriter) throws IOException
-    {
+    public void handshakeServerSide(BufferedReader bufferedReader, PrintWriter printWriter) throws IOException, HandshakeException {
 
         printWriter.println("ok " + this.componentId);
         String encryptedMessage = bufferedReader.readLine();
@@ -76,8 +76,7 @@ public class DMAPHandshakeHandler
         }
     }
 
-    public void handshakeClientSide(BufferedReader bufferedReader, PrintWriter printWriter) throws IOException
-    {
+    public void handshakeClientSide(BufferedReader bufferedReader, PrintWriter printWriter) throws IOException, HandshakeException {
         SecureRandom secureRandom = new SecureRandom();
         printWriter.println("startsecure");
         String line = bufferedReader.readLine();
