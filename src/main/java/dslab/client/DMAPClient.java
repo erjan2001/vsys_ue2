@@ -8,6 +8,8 @@ import dslab.util.Config;
 import dslab.util.Email;
 import dslab.util.dmap.DMAPHandshakeHandler;
 
+import javax.crypto.BadPaddingException;
+import javax.crypto.IllegalBlockSizeException;
 import java.io.*;
 import java.net.Socket;
 import java.util.ArrayList;
@@ -22,16 +24,17 @@ public class DMAPClient implements Runnable{
     private PrintWriter writer;
     private final DMAPHandshakeHandler dmapHandshakeHandler;
 
-    public DMAPClient(MessageClient messageClient, Config config, Shell shell) {
+    public DMAPClient(MessageClient messageClient, Config config, Shell shell, String componentId) {
         this.messageClient = messageClient;
         this.config = config;
         this.shell = shell;
-        this.dmapHandshakeHandler = new DMAPHandshakeHandler(null);
+        this.dmapHandshakeHandler = new DMAPHandshakeHandler(componentId);
     }
+
 
     private void setupConnection() throws IOException {
         this.socket = new Socket(this.config.getString("mailbox.host"),this.config.getInt("mailbox.port"));
-        this.writer = new PrintWriter(this.socket.getOutputStream());
+        this.writer = new PrintWriter(this.socket.getOutputStream(),true);
         this.reader = new BufferedReader(new InputStreamReader(this.socket.getInputStream()));
     }
 
@@ -39,11 +42,9 @@ public class DMAPClient implements Runnable{
     public void run() {
         try{
             this.setupConnection();
-
             if(!reader.readLine().equals("ok DMAP2.0")){
                 throw new IOException();
             }
-
             this.dmapHandshakeHandler.handshakeClientSide(reader, writer);
             this.loginClient();
             while (true) {
@@ -60,25 +61,20 @@ public class DMAPClient implements Runnable{
 
     public void inbox(){
         try{
-            //TODO encrypt
-            this.writer.println("list");
-            //TODO decrypt
-            String resp = reader.readLine();
-
-            if(resp.startsWith("error")){
-                writer.println(resp);
-            }
-
+            this.writer.println(this.dmapHandshakeHandler.getAesHandler().aesEncryption("list"));
             ArrayList<String> ids = new ArrayList<>();
-            for (String mail:
-                 resp.split("\n")) {
-                if(mail.startsWith("ok")){
+            String resp;
+
+            while(!(resp = this.dmapHandshakeHandler.getAesHandler().aesDecryption(reader.readLine())).equals("ok")) {
+                if(resp.startsWith("error")){
+                    writer.println(resp);
                     break;
                 }
-                // mail = id + " " + from + " " + subject
-                ids.add(mail.split(" ")[0]);
+                // resp = id + " " + from + " " + subject
+                System.out.println(resp);
+                ids.add(resp.split(" ")[0]);
             }
-
+            System.out.println(ids.size() + "--------------------------------------");
             if (ids.isEmpty()) {
                 this.shell.out().println("no mails in mailbox");
             } else {
@@ -109,22 +105,20 @@ public class DMAPClient implements Runnable{
 
     private void loginClient() throws IOException, LoginFailException {
         String toSend = "login " + this.config.getString("mailbox.user") + " " + this.config.getString("mailbox.password");
-        //TODO encrypt toSend
-        this.writer.println(toSend);
-        //TODO decrypt readLine
-        if(!this.reader.readLine().equals("ok")) {
+
+        this.writer.println(this.dmapHandshakeHandler.getAesHandler().aesEncryption(toSend));
+        String resp = this.dmapHandshakeHandler.getAesHandler().aesDecryption(this.reader.readLine());
+        if(!resp.equals("ok")) {
             throw new LoginFailException("Login failed for user: " + this.config.getString("mailbox.user"));
         }
     }
 
     private String show(String id) throws IOException, ShowException {
 
-        //TODO encrypt
-        this.writer.println("show " + id);
+        this.writer.println(this.dmapHandshakeHandler.getAesHandler().aesEncryption("show " + id));
 
-        //TODO decrypt
-        String resp = this.reader.readLine();
-
+        String resp = this.dmapHandshakeHandler.getAesHandler().aesDecryption(this.reader.readLine());
+        System.out.println(resp);
         if (resp.startsWith("error")) {
             throw new ShowException(resp);
         }

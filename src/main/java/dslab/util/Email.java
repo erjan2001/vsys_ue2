@@ -1,5 +1,10 @@
 package dslab.util;
 
+import javax.crypto.Mac;
+import javax.crypto.SecretKey;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
+import java.util.Base64;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -15,6 +20,19 @@ public class Email {
     private String hash = "";
 
     public Email(){}
+
+    public static String generateHash(SecretKey secretKey, String subject, String data, String from, String to) {
+        try {
+            String msg = String.join("\n", from, to, subject, data);
+            Mac hMac = Mac.getInstance("HmacSHA256");
+            hMac.init(secretKey);
+            hMac.update(msg.getBytes());
+            return Base64.getEncoder().encodeToString(hMac.doFinal());
+        } catch (NoSuchAlgorithmException | InvalidKeyException e) {
+            System.err.println("Not able to generate hash: " + e.getMessage());
+            return "";
+        }
+    }
 
     public String getFrom() {
         return this.from;

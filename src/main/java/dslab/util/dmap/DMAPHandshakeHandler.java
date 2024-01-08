@@ -14,12 +14,14 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.io.UncheckedIOException;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
+import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.util.Base64;
 import java.util.Dictionary;
@@ -38,10 +40,9 @@ public class DMAPHandshakeHandler
 
         printWriter.println("ok " + this.componentId);
         String encryptedMessage = bufferedReader.readLine();
-
         byte[] rsaEncrypted = Base64.getDecoder().decode(encryptedMessage);
 
-        String decryptedMessage = this.rsaDecryption(rsaEncrypted,componentId);
+        String decryptedMessage = this.rsaDecryption(rsaEncrypted);
         //check for secret key and iv
         if(!decryptedMessage.startsWith("ok")) {
             throw new HandshakeException("handshake failed on first response");
@@ -55,25 +56,16 @@ public class DMAPHandshakeHandler
 
         this.aesHandler = new AESHandler(secretKey, iv);
 
-        try
-        {
-            printWriter.println(aesHandler.aesEncryption("ok " + parts[1]));
-        } catch (IllegalBlockSizeException | BadPaddingException e)
-        {
-            throw new RuntimeException(e);
-        }
+
+        printWriter.println(aesHandler.aesEncryption("ok " + parts[1]));
 
         encryptedMessage = bufferedReader.readLine();
 
-        try
-        {
-            if(!aesHandler.aesDecryption(encryptedMessage).equals("ok")){
-                throw new HandshakeException("handshake failed on aes decryption");
-            }
-        } catch (IllegalBlockSizeException | BadPaddingException e)
-        {
-            throw new RuntimeException(e);
+
+        if(!aesHandler.aesDecryption(encryptedMessage).equals("ok")){
+            throw new HandshakeException("handshake failed on aes decryption");
         }
+
     }
 
     public void handshakeClientSide(BufferedReader bufferedReader, PrintWriter printWriter) throws IOException, HandshakeException {
@@ -85,6 +77,8 @@ public class DMAPHandshakeHandler
             throw new HandshakeException("handshake failed on client side");
         }
 
+        String serverComponentId = parts[1];
+
         byte[] challenge = new byte[32];
         secureRandom.nextBytes(challenge);
 
@@ -95,6 +89,7 @@ public class DMAPHandshakeHandler
         try
         {
             secretKey = KeyGenerator.getInstance("AES").generateKey().getEncoded();
+            secureRandom = SecureRandom.getInstanceStrong();
             secureRandom.nextBytes(iv);
             this.aesHandler = new AESHandler(secretKey, iv);
 
@@ -106,19 +101,32 @@ public class DMAPHandshakeHandler
         String secretKeyString = Base64.getEncoder().encodeToString(secretKey);
         String ivString = Base64.getEncoder().encodeToString(iv);
 
+        printWriter.println(this.rsaEncryption(("ok " + challengeString + " " + secretKeyString + " " + ivString).getBytes(), serverComponentId));
+
         this.aesHandler = new AESHandler(secretKey, iv);
+
+
+        String returnedChallenge = bufferedReader.readLine();
+        returnedChallenge = aesHandler.aesDecryption(returnedChallenge);
+        parts = returnedChallenge.split(" ");
+        System.out.println(parts[1]);
+        if(!parts[1].equals(challengeString)){
+            throw new HandshakeException("error receiving challenge");
+        }
+
+        printWriter.println(aesHandler.aesEncryption("ok"));
 
 
     }
 
-    public String rsaDecryption(byte[] encryptedMessage, String componentId) throws IOException
+    public String rsaDecryption(byte[] encryptedMessage) throws IOException
     {
         String decryptedMessage;
         try
         {
-            PrivateKey privateKey = Keys.readPrivateKey(new File("./keys/server/" + componentId + ".der"));
+            PrivateKey privateKey = Keys.readPrivateKey(new File("./keys/server/" + this.componentId + ".der"));
             Cipher decryptCipher  = Cipher.getInstance("RSA/ECB/PKCS1Padding");
-            decryptCipher .init(Cipher.DECRYPT_MODE, privateKey);
+            decryptCipher.init(Cipher.DECRYPT_MODE, privateKey);
             byte[] decryptedMessageBytes = decryptCipher.doFinal(encryptedMessage);
             decryptedMessage = new String(decryptedMessageBytes, StandardCharsets.UTF_8);
         } catch (NoSuchAlgorithmException | InvalidKeyException | NoSuchPaddingException | IllegalBlockSizeException |
@@ -126,30 +134,33 @@ public class DMAPHandshakeHandler
         {
             throw new RuntimeException(e);
         }
+
         return decryptedMessage;
     }
 
-    public String rsaEncryption (byte[] decryptedMessage){
-        String encryptedMessage;
+    public String rsaEncryption (byte[] decryptedMessage, String componentId){
+        String encryptedMessage = "ok test";
         try
         {
-            PrivateKey privateKey = Keys.readPrivateKey(new File("./keys/servers/" + componentId + ".der"));
+            System.out.println("./keys/client/" + componentId + "_pub.der");
+            PublicKey publicKey = Keys.readPublicKey(new File("./keys/client/" + componentId + "_pub.der"));
+
             Cipher encryptCipher = Cipher.getInstance("RSA/ECB/PKCS1Padding");
-            encryptCipher.init(Cipher.ENCRYPT_MODE, privateKey);
+            encryptCipher.init(Cipher.ENCRYPT_MODE, publicKey);
             byte[] encryptedMessageBytes = encryptCipher.doFinal(decryptedMessage);
             encryptedMessage = Base64.getEncoder().encodeToString(encryptedMessageBytes);
         } catch (IOException | NoSuchAlgorithmException | NoSuchPaddingException | InvalidKeyException |
                  IllegalBlockSizeException | BadPaddingException e)
         {
-            throw new RuntimeException(e);
+            System.out.println("CATCH");
+            System.err.println(e.getMessage());
         }
         return encryptedMessage;
-
     }
 
     public String getComponentId()
     {
-        return componentId;
+        return this.componentId;
     }
 
     public void setComponentId(String componentId)
