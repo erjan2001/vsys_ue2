@@ -6,10 +6,15 @@ import java.rmi.*;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import at.ac.tuwien.dsg.orvell.Shell;
 import at.ac.tuwien.dsg.orvell.StopShellException;
+import at.ac.tuwien.dsg.orvell.annotation.Command;
 import dslab.ComponentFactory;
 import dslab.util.Config;
 
@@ -45,9 +50,6 @@ public class Nameserver implements INameserver {
 
     @Override
     public void run() {
-        if (System.getSecurityManager() == null) {
-            System.setSecurityManager(new SecurityManager());
-        }
         nameserverRemote = new NameserverRemote(childNameServers, mailboxServers);
         try {
             INameserverRemote nameserverStub = (INameserverRemote) UnicastRemoteObject.exportObject(nameserverRemote, 0);
@@ -78,16 +80,37 @@ public class Nameserver implements INameserver {
         shell.run();
     }
 
+    @Command
     @Override
     public void nameservers() {
-        // TODO
+        List<String> sortedNameservers = new ArrayList<>(childNameServers.keySet());
+        Collections.sort(sortedNameservers);
+
+        StringBuilder nameserverList = new StringBuilder();
+        int i = 0;
+        for (String nameserver : sortedNameservers) {
+            nameserverList.append(++i + ". " + nameserver + "\n");
+        }
+
+        shell.out().print(nameserverList);
     }
 
+    @Command
     @Override
     public void addresses() {
-        // TODO
+
+        StringBuilder nameserverList = new StringBuilder();
+        int i = 0;
+        for (Map.Entry<String, String> entry : mailboxServers.entrySet()) {
+            String domain = entry.getKey();
+            String address = entry.getValue();
+            nameserverList.append(++i + ". " + domain + " " + address + "\n");
+        }
+
+        shell.out().print(nameserverList);
     }
 
+    @Command
     @Override
     public void shutdown() {
         try {
