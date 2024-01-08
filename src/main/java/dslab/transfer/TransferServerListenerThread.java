@@ -1,5 +1,6 @@
 package dslab.transfer;
 
+import dslab.nameserver.INameserverRemote;
 import dslab.util.Config;
 import dslab.util.Email;
 import dslab.util.Globals;
@@ -13,14 +14,14 @@ import java.util.concurrent.*;
 public class TransferServerListenerThread extends Thread implements Globals {
 
     private final ServerSocket transferServerSocket;
-    private final Config domains;
+    private final INameserverRemote rootNameserver;
     private final Config config;
 
     private ThreadPoolExecutor threadPoolExecutor;
 
-    public TransferServerListenerThread(ServerSocket transferServerSocket, Config config, Config domains) {
+    public TransferServerListenerThread(ServerSocket transferServerSocket, Config config, INameserverRemote rootNameserver) {
         this.transferServerSocket = transferServerSocket;
-        this.domains = domains;
+        this.rootNameserver = rootNameserver;
         this.config = config;
         this.threadPoolExecutor =
                 (ThreadPoolExecutor) Executors.newFixedThreadPool(THREADPOOL_SIZE);
@@ -34,7 +35,7 @@ public class TransferServerListenerThread extends Thread implements Globals {
 
                 BlockingQueue<Email> emailBlockingQueue = new LinkedBlockingQueue<>();
 
-                DMTPSend dmtpSend =new DMTPSend(this.domains,
+                DMTPSend dmtpSend =new DMTPSend(this.rootNameserver,
                         emailBlockingQueue, new ConcurrentHashMap<>(), this.config, this.transferServerSocket);
                 this.threadPoolExecutor.execute(new DMTPReceiverTransfer(clientSocket,
                         emailBlockingQueue, dmtpSend));

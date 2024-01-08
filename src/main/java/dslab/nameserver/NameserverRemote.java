@@ -13,21 +13,6 @@ public class NameserverRemote implements INameserverRemote {
         this.mailboxServers = mailboxServers;
     }
 
-
-    /**
-     * Registers a mailbox server with the given address for the given domain. For example, when registering a
-     * nameserver for the domain 'earth.planet', the new nameserver first calls the root nameserver with the argument
-     * 'earth.planet'. The root nameserver locates the nameserver for 'planet' via its child-nameserver references, and
-     * invokes this method with the remainder of the domain (i.e., 'earth'). Because 'earth' is then the leaf zone, the
-     * current nameserver ('planet') stores the reference in its child-nameserver references.
-     *
-     * @param domain     the domain
-     * @param nameserver the nameserver's remote object
-     * @throws RemoteException            RMI exception (declaration required by RMI)
-     * @throws AlreadyRegisteredException if the given domain is already registered
-     * @throws InvalidDomainException     if the domain is invalid (e.g., due to a syntax error, or a required intermediary
-     *                                    nameserver was not found)
-     */
     @Override
     public void registerNameserver(String domain, INameserverRemote nameserver) throws RemoteException, AlreadyRegisteredException, InvalidDomainException {
         validateDomain(domain);
