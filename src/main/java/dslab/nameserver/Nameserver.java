@@ -6,6 +6,7 @@ import java.rmi.*;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
+import java.util.concurrent.ConcurrentHashMap;
 
 import at.ac.tuwien.dsg.orvell.Shell;
 import at.ac.tuwien.dsg.orvell.StopShellException;
@@ -17,6 +18,8 @@ public class Nameserver implements INameserver {
     private final Config config;
     private final Shell shell;
     private final boolean isRoot;
+    private final ConcurrentHashMap<String, INameserverRemote> childNameServers;
+    private final ConcurrentHashMap<String, String> mailboxServers;
     private INameserverRemote nameserverRemote;
     private Registry registry;
 
@@ -35,6 +38,9 @@ public class Nameserver implements INameserver {
         this.shell.setPrompt(componentId + "> ");
         this.config = config;
         this.isRoot = !config.containsKey("domain");
+
+        this.childNameServers = new ConcurrentHashMap<>();
+        this.mailboxServers = new ConcurrentHashMap<>();
     }
 
     @Override
@@ -42,7 +48,7 @@ public class Nameserver implements INameserver {
         if (System.getSecurityManager() == null) {
             System.setSecurityManager(new SecurityManager());
         }
-        nameserverRemote = new NameserverRemote();
+        nameserverRemote = new NameserverRemote(childNameServers, mailboxServers);
         try {
             INameserverRemote nameserverStub = (INameserverRemote) UnicastRemoteObject.exportObject(nameserverRemote, 0);
             if (isRoot) {
