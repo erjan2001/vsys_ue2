@@ -36,7 +36,7 @@ public class TransferServerListenerThread extends Thread implements Globals {
                 BlockingQueue<Email> emailBlockingQueue = new LinkedBlockingQueue<>();
 
                 DMTPSend dmtpSend =new DMTPSend(this.rootNameserver,
-                        emailBlockingQueue, new ConcurrentHashMap<>(), this.config, this.transferServerSocket);
+                        emailBlockingQueue, this.config, this.transferServerSocket);
                 this.threadPoolExecutor.execute(new DMTPReceiverTransfer(clientSocket,
                         emailBlockingQueue, dmtpSend));
 
