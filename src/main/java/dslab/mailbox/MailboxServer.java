@@ -1,5 +1,15 @@
 package dslab.mailbox;
 
+import at.ac.tuwien.dsg.orvell.Shell;
+import at.ac.tuwien.dsg.orvell.StopShellException;
+import at.ac.tuwien.dsg.orvell.annotation.Command;
+import dslab.ComponentFactory;
+import dslab.nameserver.AlreadyRegisteredException;
+import dslab.nameserver.INameserverRemote;
+import dslab.nameserver.InvalidDomainException;
+import dslab.util.Config;
+import dslab.util.Email;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintStream;
@@ -15,24 +25,13 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import at.ac.tuwien.dsg.orvell.Shell;
-import at.ac.tuwien.dsg.orvell.StopShellException;
-import at.ac.tuwien.dsg.orvell.annotation.Command;
-import dslab.ComponentFactory;
-import dslab.nameserver.AlreadyRegisteredException;
-import dslab.nameserver.INameserverRemote;
-import dslab.nameserver.InvalidDomainException;
-import dslab.util.Config;
-import dslab.util.Email;
-
 public class MailboxServer implements IMailboxServer, Runnable {
 
-    private String componentId;
-    private Config config;
-    private Config users;
-    private ServerSocket dmtpServer;
-    private ServerSocket dmapServer;
-    private Shell shell;
+    private final Config config;
+    private final Config users;
+    private final ServerSocket dmtpServer;
+    private final ServerSocket dmapServer;
+    private final Shell shell;
 
     /**
      * Creates a new server instance.
@@ -43,12 +42,11 @@ public class MailboxServer implements IMailboxServer, Runnable {
      * @param out the output stream to write console output to
      */
     public MailboxServer(String componentId, Config config, Config users, InputStream in, PrintStream out) {
-        this.componentId = componentId;
         this.config = config;
         this.users = users;
         this.shell = new Shell(in, out);
         this.shell.register(this);
-        this.shell.setPrompt(this.componentId + " < ");
+        this.shell.setPrompt(componentId + " < ");
 
         try {
             this.dmtpServer = new ServerSocket(this.config.getInt("dmtp.tcp.port"));

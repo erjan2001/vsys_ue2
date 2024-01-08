@@ -5,8 +5,8 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class NameserverRemote implements INameserverRemote {
 
-    private ConcurrentHashMap<String, INameserverRemote> childNameServers;
-    private ConcurrentHashMap<String, String> mailboxServers;
+    private final ConcurrentHashMap<String, INameserverRemote> childNameServers;
+    private final ConcurrentHashMap<String, String> mailboxServers;
 
     public NameserverRemote(ConcurrentHashMap<String, INameserverRemote> childNameServers, ConcurrentHashMap<String, String> mailboxServers) {
         this.childNameServers = childNameServers;
