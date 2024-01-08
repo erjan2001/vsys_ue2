@@ -4,7 +4,13 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintStream;
 import java.io.UncheckedIOException;
+import java.net.InetAddress;
 import java.net.ServerSocket;
+import java.net.UnknownHostException;
+import java.rmi.NotBoundException;
+import java.rmi.RemoteException;
+import java.rmi.registry.LocateRegistry;
+import java.rmi.registry.Registry;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -13,6 +19,9 @@ import at.ac.tuwien.dsg.orvell.Shell;
 import at.ac.tuwien.dsg.orvell.StopShellException;
 import at.ac.tuwien.dsg.orvell.annotation.Command;
 import dslab.ComponentFactory;
+import dslab.nameserver.AlreadyRegisteredException;
+import dslab.nameserver.INameserverRemote;
+import dslab.nameserver.InvalidDomainException;
 import dslab.util.Config;
 import dslab.util.Email;
 
@@ -46,6 +55,22 @@ public class MailboxServer implements IMailboxServer, Runnable {
             this.dmapServer = new ServerSocket(this.config.getInt("dmap.tcp.port"));
         } catch (IOException e) {
             throw new UncheckedIOException("Error while creating dmtp/dmap server", e);
+        }
+
+        try {
+            Registry registry = LocateRegistry.getRegistry(config.getString("registry.host"), config.getInt("registry.port"));
+            INameserverRemote rootNameserver = (INameserverRemote) registry.lookup(config.getString("root_id"));
+            rootNameserver.registerMailboxServer(config.getString("domain"), InetAddress.getLocalHost().getHostAddress() + config.getInt("dmtp.tcp.port"));
+        } catch (RemoteException e) {
+            System.err.println("Remote operation failed: " + e.getMessage());
+        } catch (NotBoundException e) {
+            System.err.println("Root Nameserver not bound: " + e.getMessage());
+        } catch (UnknownHostException e) {
+            System.err.println("Unable to determine local host: " + e.getMessage());
+        } catch (AlreadyRegisteredException e) {
+            System.err.println("Domain is already registered: " + e.getMessage());
+        } catch (InvalidDomainException e) {
+            System.err.println("Invalid domain: " + e.getMessage());
         }
     }
 
