@@ -48,7 +48,6 @@ public class DMAPConnection extends Thread {
 
                 if(parts[0].equals("startsecure")){
 
-
                         DMAPHandshakeHandler dmapHandshakeHandler = new DMAPHandshakeHandler(componentId);
                     try
                     {

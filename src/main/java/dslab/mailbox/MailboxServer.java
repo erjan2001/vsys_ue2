@@ -32,6 +32,7 @@ public class MailboxServer implements IMailboxServer, Runnable {
     private final ServerSocket dmtpServer;
     private final ServerSocket dmapServer;
     private final Shell shell;
+    private final String componentId;
 
     /**
      * Creates a new server instance.
@@ -44,6 +45,7 @@ public class MailboxServer implements IMailboxServer, Runnable {
     public MailboxServer(String componentId, Config config, Config users, InputStream in, PrintStream out) {
         this.config = config;
         this.users = users;
+        this.componentId = componentId;
         this.shell = new Shell(in, out);
         this.shell.register(this);
         this.shell.setPrompt(componentId + " < ");

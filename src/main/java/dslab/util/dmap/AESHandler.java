@@ -36,18 +36,38 @@ public class AESHandler
         } catch (NoSuchAlgorithmException | NoSuchPaddingException | InvalidKeyException |
                  InvalidAlgorithmParameterException e)
         {
+            System.out.println("here catched");
             throw new RuntimeException(e);
         }
     }
 
-    public String aesEncryption(String decryptedMessage) throws IllegalBlockSizeException, BadPaddingException
+    public String aesEncryption(String decryptedMessage)
     {
-        return Base64.getEncoder().encodeToString(this.encryptCipher.doFinal(decryptedMessage.getBytes()));
+        try
+        {
+            return Base64.getEncoder().encodeToString(this.encryptCipher.doFinal(decryptedMessage.getBytes()));
+        } catch (IllegalBlockSizeException e)
+        {
+            throw new RuntimeException(e);
+        } catch (BadPaddingException e)
+        {
+            throw new RuntimeException(e);
+        }
     }
 
-    public String aesDecryption(String encryptedMessage) throws IllegalBlockSizeException, BadPaddingException
+    public String aesDecryption(String encryptedMessage)
     {
-        byte[] decryptedBytes = this.decryptCipher.doFinal(Base64.getDecoder().decode(encryptedMessage));
+        byte[] decryptedBytes = new byte[0];
+        try
+        {
+            decryptedBytes = this.decryptCipher.doFinal(Base64.getDecoder().decode(encryptedMessage));
+        } catch (IllegalBlockSizeException e)
+        {
+            throw new RuntimeException(e);
+        } catch (BadPaddingException e)
+        {
+            throw new RuntimeException(e);
+        }
         return new String(decryptedBytes);
     }
 }

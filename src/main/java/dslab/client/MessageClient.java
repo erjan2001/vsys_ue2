@@ -2,6 +2,8 @@ package dslab.client;
 
 import java.io.*;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadPoolExecutor;
 
 import at.ac.tuwien.dsg.orvell.Shell;
 import at.ac.tuwien.dsg.orvell.StopShellException;
@@ -46,13 +48,14 @@ public class MessageClient implements IMessageClient, Runnable {
 
         this.shell.register(this);
         this.shell.setPrompt(componentId + " < ");
+        this.dmapExecuter = Executors.newSingleThreadExecutor();
         this.loadKey();
         this.startDMAPClient();
     }
 
     private void startDMAPClient() {
-        this.dmapClient = new DMAPClient(this, this.config, this.shell);
-        this.dmapExecuter.submit(dmapClient);
+        this.dmapClient = new DMAPClient(this, this.config, this.shell, this.componentId);
+        this.dmapExecuter.submit(this.dmapClient);
     }
 
     private void loadKey() {
@@ -101,6 +104,7 @@ public class MessageClient implements IMessageClient, Runnable {
         } catch (IOException e) {
             // nothing to do
         }
+        this.dmapExecuter.shutdown();
         throw new StopShellException();
     }
 
