@@ -72,7 +72,7 @@ public class MessageClient implements IMessageClient, Runnable {
     @Command
     @Override
     public void inbox() {
-
+        this.dmapClient.inbox();
     }
 
     @Command
@@ -96,6 +96,11 @@ public class MessageClient implements IMessageClient, Runnable {
     @Command
     @Override
     public void shutdown() {
+        try {
+            this.dmapClient.shutdown();
+        } catch (IOException e) {
+            // nothing to do
+        }
         throw new StopShellException();
     }
 
