@@ -1,5 +1,10 @@
 package dslab.util;
 
+import javax.crypto.Mac;
+import javax.crypto.SecretKey;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
+import java.util.Base64;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -12,7 +17,22 @@ public class Email {
     private String subject = "";
     private String data = "";
 
+    private String hash = "";
+
     public Email(){}
+
+    public static String generateHash(SecretKey secretKey, String subject, String data, String from, String to) {
+        try {
+            String msg = String.join("\n", from, to, subject, data);
+            Mac hMac = Mac.getInstance("HmacSHA256");
+            hMac.init(secretKey);
+            hMac.update(msg.getBytes());
+            return Base64.getEncoder().encodeToString(hMac.doFinal());
+        } catch (NoSuchAlgorithmException | InvalidKeyException e) {
+            System.err.println("Not able to generate hash: " + e.getMessage());
+            return "";
+        }
+    }
 
     public String getFrom() {
         return this.from;
@@ -54,6 +74,14 @@ public class Email {
         return this.serverTos;
     }
 
+    public String getHash() {
+        return hash;
+    }
+
+    public void setHash(String hash) {
+        this.hash = hash;
+    }
+
     @Override
     public String toString() {
         StringBuilder email = new StringBuilder();
@@ -67,8 +95,8 @@ public class Email {
         email.append("\n\r");
 
         email.append("subject ").append(this.subject).append("\n\r");
-        email.append("data ").append(this.data);
-
+        email.append("data ").append(this.data).append("\n\r");
+        email.append("hash ").append(this.hash);
         return email.toString();
     }
 }

@@ -22,14 +22,16 @@ public class MailboxDMAPServerThread extends Thread implements Globals {
     private Map<String, String> userPassword;
     private ThreadPoolExecutor threadPoolExecutor;
     private Socket clientSocket;
+    private String componentId;
 
-    public MailboxDMAPServerThread(ServerSocket dmapServer, Map<String, Map<Integer, Email>> userInbox, Map<String, String> userPassword) {
+    public MailboxDMAPServerThread(ServerSocket dmapServer, Map<String, Map<Integer, Email>> userInbox, Map<String, String> userPassword, String componentId) {
         this.dmapServer = dmapServer;
         this.userInbox = userInbox;
         this.userPassword = userPassword;
         this.threadPoolExecutor =
                 (ThreadPoolExecutor) Executors.newFixedThreadPool(THREADPOOL_SIZE);
         this.clientSocket = null;
+        this.componentId = componentId;
     }
 
     @Override
@@ -37,7 +39,7 @@ public class MailboxDMAPServerThread extends Thread implements Globals {
         while (true) {
             try {
                 this.clientSocket = this.dmapServer.accept();
-                this.threadPoolExecutor.execute(new DMAPConnection(this.clientSocket, this.userInbox, this.userPassword));
+                this.threadPoolExecutor.execute(new DMAPConnection(this.clientSocket, this.userInbox, this.userPassword, this.componentId));
             } catch (SocketException e) {
                 this.shutdown();
                 break;
