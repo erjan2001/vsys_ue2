@@ -15,45 +15,59 @@ public class NameserverRemote implements INameserverRemote {
 
     @Override
     public void registerNameserver(String domain, INameserverRemote nameserver) throws RemoteException, AlreadyRegisteredException, InvalidDomainException {
+        System.out.println("Registering nameserver for (sub-)domain '" + domain + "'");
         validateDomain(domain);
 
         int lastDotIndex = domain.lastIndexOf(".");
         if (lastDotIndex != -1) {
             String nextZone = domain.substring(lastDotIndex + 1);
             String nextDomain = domain.substring(0, lastDotIndex);
-
             validateDomainParts(nextZone, nextDomain);
-            childNameServers.get(nextZone).registerNameserver(nextDomain, nameserver);
-        } else {
-            if (childNameServers.containsKey(domain)) {
-                throw new AlreadyRegisteredException("Domain is already registered");
+
+            INameserverRemote childZone;
+            synchronized (this) {
+                if (!childNameServers.containsKey(nextZone)) {
+                    throw new InvalidDomainException("Intermediary zone " + nextZone + " does not exist");
+                }
+                childZone = childNameServers.get(nextZone);
             }
-            childNameServers.put(domain, nameserver);
+            childZone.registerNameserver(nextDomain, nameserver);
+
+        } else {
+            if (childNameServers.putIfAbsent(domain, nameserver) != null) {
+                throw new AlreadyRegisteredException("Mailbox is already registered");
+            }
         }
+
     }
 
     @Override
     public void registerMailboxServer(String domain, String address) throws RemoteException, AlreadyRegisteredException, InvalidDomainException {
+        System.out.println("Registering mailbox server for (sub-)domain '" + domain + "'");
         validateDomain(domain);
 
         int lastDotIndex = domain.lastIndexOf(".");
         if (lastDotIndex != -1) {
             String nextZone = domain.substring(lastDotIndex + 1);
             String nextDomain = domain.substring(0, lastDotIndex);
-
             validateDomainParts(nextZone, nextDomain);
+
+            synchronized (this) {
+                if (!childNameServers.containsKey(nextZone)) {
+                    throw new InvalidDomainException("Intermediary zone " + nextZone + " does not exist");
+                }
+            }
             childNameServers.get(nextZone).registerMailboxServer(nextDomain, address);
         } else {
-            if (mailboxServers.containsKey(domain)) {
+            if (mailboxServers.putIfAbsent(domain, address) != null) {
                 throw new AlreadyRegisteredException("Mailbox is already registered");
             }
-            mailboxServers.put(domain, address);
         }
     }
 
     private void validateDomain(String domain) throws InvalidDomainException {
         if (domain.matches(".*\\s+.*")) {
-            throw new InvalidDomainException("Domain can not contain whitespace"); // TODO maybe add more
+            throw new InvalidDomainException("Domain can not contain whitespace");
         }
     }
 
@@ -61,19 +75,17 @@ public class NameserverRemote implements INameserverRemote {
         if (nextZone.isBlank() || nextDomain.isBlank()) {
             throw new InvalidDomainException("Domain must contain characters between dots");
         }
-
-        if (!childNameServers.containsKey(nextZone)) {
-            throw new InvalidDomainException("Intermediary zone " + nextZone + " does not exist");
-        }
     }
 
     @Override
     public INameserverRemote getNameserver(String zone) throws RemoteException {
+        System.out.println("Nameserver for '" + zone + "' requested by transfer server");
         return childNameServers.get(zone);
     }
 
     @Override
     public String lookup(String domain) throws RemoteException {
+        System.out.println("Mailbox server for '" + domain + "' requested by transfer server");
         return mailboxServers.get(domain);
     }
 }
